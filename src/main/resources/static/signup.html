@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입 및 SMS 인증</title>
+</head>
+<body>
+<div class="page">
+    <h1>회원정보를 입력해주세요</h1>
+
+    <label>프로필 사진:</label>
+    <input type="file" id="profileImage">
+    <img id="profileImagePreview" alt="프로필 이미지 미리보기" style="display:none;">
+    <br><br>
+
+    <label>성별:</label>
+    <select id="gender">
+        <option value="male">남성</option>
+        <option value="female">여성</option>
+    </select>
+    <br><br>
+
+    <label>이름:</label>
+    <input type="text" id="name" placeholder="이름">
+    <div id="nameError"></div>
+    <br><br>
+
+    <label>아이디(이메일):</label>
+    <input type="email" id="email" placeholder="아이디(이메일)">
+    <div id="emailError"></div>
+    <br><br>
+
+    <label>비밀번호:</label>
+    <input type="password" id="password" placeholder="비밀번호">
+    <div id="passwordError"></div>
+    <br><br>
+
+    <label>비밀번호 확인:</label>
+    <input type="password" id="confirmPassword" placeholder="비밀번호 확인">
+    <div id="confirmPasswordError"></div>
+    <br><br>
+
+    <label>우편번호:</label>
+    <input type="text" id="postcode" readonly>
+    <button onclick="handleOpenAddressModal()">우편번호 찾기</button>
+    <br><br>
+
+    <label>주소:</label>
+    <input type="text" id="address" readonly>
+    <br><br>
+
+    <label>상세 주소:</label>
+    <input type="text" id="detailedAddress" placeholder="상세 주소를 입력하세요">
+    <br><br>
+
+    <label>휴대폰 번호:</label>
+    <input type="text" id="phone" placeholder="휴대폰 번호" required>
+    <div id="phoneError"></div>
+
+    <button type="button" onclick="sendSms()">인증번호 전송</button><br><br>
+
+    <label for="verificationCode">인증번호:</label>
+    <input type="text" id="verificationCode" name="verificationCode" required>
+    <button type="button" onclick="verifySms()">인증번호 확인</button><br><br>
+
+
+    <button onclick="handleSignup()">가입하기</button>
+
+    <div id="successModal" style="display: none;">
+        <p>가입 완료되었습니다.</p>
+        <button onclick="handleCloseSuccessModal()">닫기</button>
+    </div>
+
+
+</div>
+
+<script>
+    async function sendSms() {
+        const phone = document.getElementById('phone').value;
+        try {
+            const response = await fetch('/api/sms-certification/sends', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({phone})
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            console.log(data);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    async function verifySms() {
+        const phone = document.getElementById('phone').value;
+        const certificationNumber = document.getElementById('verificationCode').value;
+        try {
+            const response = await fetch('/api/sms-certification/confirms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({phone, certificationNumber})
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            console.log(data);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+    function handleSignup() {
+        var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
+        var confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (!email) {
+            document.getElementById('emailError').textContent = "이메일을 입력하세요.";
+            return;
+        } else {
+            document.getElementById('emailError').textContent = "";
+        }
+
+        if (!password || password !== confirmPassword) {
+            document.getElementById('passwordError').textContent = "비밀번호가 일치하지 않습니다.";
+            return;
+        } else {
+            document.getElementById('passwordError').textContent = "";
+        }
+
+        submitSignupForm();
+    }
+
+    function submitSignupForm() {
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const gender = document.getElementById('gender').value;
+        const postcode = document.getElementById('postcode').value;
+        const address = document.getElementById('address').value;
+        const detailedAddress = document.getElementById('detailedAddress').value;
+        const phone = document.getElementById('phone').value;
+        const certificationNumber = document.getElementById('verificationCode').value;
+
+        fetch('/api/user/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                password: password,
+                gender: gender,
+                postcode: postcode,
+                address: address,
+                detailedAddress: detailedAddress,
+                phone: phone,
+                certificationNumber: certificationNumber
+            })
+        }).then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert('가입 성공!');
+                } else {
+                    alert('가입 실패: ' + data.message);
+                }
+            });
+    }
+
+    function handleCloseSuccessModal() {
+        document.getElementById('successModal').style.display = 'none';
+    }
+
+</script>
+
+</body>
+</html>
